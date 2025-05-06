@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frontend/src/assets/SoundBond/SoundBondViola.png" alt="Logo" width="180"/>
+  <img src="SoundBond/wwwroot/assets/SoundBondViola.png" alt="Logo" width="180"/>
 </p>
 
 <h2 align="center">La tua musica, le tue connessioni.</h2>

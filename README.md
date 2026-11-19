@@ -1,135 +1,100 @@
-<p align="center">
-  <img src="SoundBond/wwwroot/assets/SoundBondViola.png" alt="Logo" width="180"/>
-</p>
+# SoundBond – Backend
 
-<h2 align="center">La tua musica, le tue connessioni.</h2>
+SoundBond è un social network musicale che mette in contatto persone con gusti simili: calcola la compatibilità tra utenti in base a generi e artisti preferiti e permette di connettersi e chattare in tempo reale.
+Questo repository contiene l'API (ASP.NET Core). Il client web si trova in [SoundBond-Frontend](https://github.com/camillazicari/SoundBond-Frontend).
 
-**SoundBond** è un social network musicale che abbina utenti in base ai loro gusti. Ascolta brani, esplora nuove playlist, invia richieste e chatta con chi condivide la tua passione.
+![Pagina Connessioni del client web](docs/connessioni.jpg)
 
-### 🚀 Funzionalità principali
+Progetto finale del corso di sviluppo web full-stack (aprile–luglio 2025), sviluppato da [Camilla Zicari](https://github.com/camillazicari).
 
-- 🔒 **Proteggi la tua identità musicale** <br/>
-  Registrati in modo sicuro con il sistema di autenticazione ASP.NET Identity, che mantiene al sicuro i tuoi dati mentre esplori il mondo SoundBond.
+## Funzionalità principali
 
-- 🎵 **Playlist che parlano di te** <br/>
-  Non più playlist generiche! SoundBond crea raccolte musicali giornaliere su misura analizzando i tuoi generi preferiti, perché ogni brano rifletta davvero il tuo gusto unico.
+- Registrazione, login e gestione dell'account con ASP.NET Identity; autenticazione stateless con token JWT.
+- Profilo utente con caricamento dell'immagine (salvata in `wwwroot/images`) e bio.
+- Gusti musicali per utente: generi, artisti e brani (CRUD).
+- Elenco degli utenti con i rispettivi gusti, usato dal client per calcolare la compatibilità.
+- Richieste di connessione (inviate, ricevute, annullate) e legami tra utenti ("bonders").
+- Chat privata in tempo reale con SignalR: invio dei messaggi, persistenza, conferme di lettura, elenco delle conversazioni ed eliminazione di una chat per un solo utente.
+- Recensioni sulla piattaforma.
 
-- 🎧 **Ascolta prima, ama dopo** <br/>
-  Grazie all'integrazione con l'API di Deezer, puoi scoprire anteprime dei brani direttamente nella piattaforma, senza dover saltare tra app diverse.
+## Scelte tecniche
 
-- 🤝 **Anima gemella musicale? Ora la trovi** <br/>
-  Un algoritmo intelligente ti abbina con altri utenti che condividono la tua passione per artisti, generi o brani specifici. Chi sa che amicizie nasceranno da un riff condiviso?
+- **ASP.NET Core 8 Web API** con controller e servizi registrati tramite dependency injection; documentazione Swagger con supporto al token Bearer.
+- **Entity Framework Core + SQL Server**, approccio code-first con migrazioni (`SoundBond/Migrations`).
+- **ASP.NET Identity** con utenti e ruoli personalizzati (`ApplicationUser`, `ApplicationRole`); le regole sulle password sono configurabili da `appsettings.json`.
+- **JWT**: emissione del token al login e validazione di issuer, audience, scadenza e firma. Per l'hub SignalR il token viene letto dalla query string (`access_token`), perché i WebSocket del browser non permettono header personalizzati.
+- **SignalR** (`Hubs/ChatHub.cs`): ogni coppia di utenti condivide un gruppo; un `IUserIdProvider` personalizzato associa le connessioni all'id utente, così le notifiche raggiungono anche chi non ha la chat aperta.
+- **Configurazione senza segreti nel repository**: stringa di connessione e chiave JWT vengono da `dotnet user-secrets` in sviluppo e da variabili d'ambiente in produzione. L'app si ferma all'avvio con un messaggio chiaro se mancano.
 
-- 📝 **Il tuo biglietto da visita sonoro** <br/>
-  Crea un profilo che racconti chi sei attraverso la musica: aggiungi i tuoi artisti del cuore, i generi che ti fanno vibrare e i brani che non smetteresti mai di ascoltare.
+## Architettura
 
-- 💬 **Chatta al ritmo giusto** <br/>
-  Scambia messaggi in tempo reale con i tuoi match grazie alla tecnologia SignalR, perfetta per condividere impressioni su quel nuovo album o organizzare il prossimo concerto insieme.
-
-- 🌟 **La tua opinione modella SoundBond** <br/>
-  Ogni feedback che lasci aiuta a migliorare la piattaforma, rendendola sempre più adatta alle esigenze della community musicale.
-
-<hr/>
-
-### 🛠️ Tech Stack
-
-**Frontend**
-
-- [React](https://reactjs.org/)
-- [Vite](https://vitejs.dev/)
-- [TailwindCSS](https://tailwindcss.com/)
-- [Redux Toolkit](https://redux-toolkit.js.org/)
-- [React Router DOM](https://reactrouter.com/)
-
-**Backend**
-
-- [ASP.NET Core Web API](https://docs.microsoft.com/en-us/aspnet/core/web-api/)
-- [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
-- [SQL Server](https://www.microsoft.com/en-us/sql-server/)
-- [ASP.NET Identity](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/identity)
-- [SignalR](https://dotnet.microsoft.com/apps/aspnet/signalr)
-
-**Servizi esterni**
-
-- [Deezer API](https://developers.deezer.com/)
-
-<hr/>
-
-### 💻 Installazione e setup
-
-**Prerequisiti**
-
-- Node.js
-
-- .NET 8 SDK
-
-- SQL Server
-
-- Visual Studio 2022 o superiore
-
-**Frontend**
-
-1. Clona il repository frontend:
-
-```bash
-git clone https://github.com/camillazicari/SoundBond-Frontend.git
+```
+SoundBond-Frontend (React)
+   │  REST + JWT, WebSocket SignalR
+   ▼
+SoundBond (ASP.NET Core 8, porta 5220)
+   ├── Controllers/   endpoint REST /api/*
+   ├── Hubs/          ChatHub su /chatHub
+   ├── Services/      logica applicativa
+   ├── Data/          SoundBondDbContext (EF Core + Identity)
+   ├── Models/, DTOs/
+   └── Migrations/
+   │
+   ▼
+SQL Server
 ```
 
-2. Accedi alla cartella del progetto
+Endpoint principali (elenco completo su Swagger):
+
+| Area | Rotte |
+| --- | --- |
+| Account | `POST /api/Account/register`, `POST /api/Account/login`, `GET /api/Account/userLogged`, `GET /api/Account/utenti` |
+| Gusti | `/api/Generi`, `/api/Artisti`, `/api/Brani` |
+| Profilo | `GET/POST/PUT /api/Profilo` |
+| Connessioni | `/api/Richiesta`, `/api/Bonders` |
+| Chat | `GET /api/Messages/conversazioni`, `GET /api/Messages/{userId}`, hub `/chatHub` |
+| Recensioni | `/api/Recensioni` |
+
+## Avvio in locale
+
+Prerequisiti: [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) e un'istanza di SQL Server. Su macOS o Linux la si può avviare con Docker:
 
 ```bash
-cd CAPSTONE
+docker run -d --name soundbond-sql -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD='<password-sicura>' -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest
 ```
 
-3. Installa le dipendenze
+Su Mac con Apple Silicon aggiungi `--platform linux/amd64` e usa un runtime con emulazione Rosetta (per esempio Colima avviato con `--vm-type vz --vz-rosetta`).
 
-```bash
-npm install
-```
-
-4. Avvia il server di sviluppo
-
-```bash
-node server.js & npm start
-```
-
-**Backend**
-
-1. Clona il repository del backend
+Configura i segreti, crea il database e avvia l'API:
 
 ```bash
 git clone https://github.com/camillazicari/SoundBond-Backend.git
+cd SoundBond-Backend
+dotnet tool restore
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=SoundBond;User Id=sa;Password=<password-sicura>;TrustServerCertificate=true" --project SoundBond
+dotnet user-secrets set "Jwt:SecurityKey" "$(openssl rand -hex 32)" --project SoundBond
+dotnet ef database update --project SoundBond
+dotnet run --project SoundBond
 ```
 
-2. Apri la soluzione SoundBond.API in Visual Studio
+L'API risponde su `http://localhost:5220` e Swagger è su `http://localhost:5220/swagger`. Per il client web segui le istruzioni di [SoundBond-Frontend](https://github.com/camillazicari/SoundBond-Frontend).
 
-3. Configura appsettings.json con la tua stringa di connessione per SQL Server
+### Utenti dimostrativi
 
-4. Applica le migration (se necessario)
+Con l'API avviata, lo script seguente crea quattro utenti con gusti in parte sovrapposti, ciascuno con profilo, generi, artisti (con immagini da Deezer) e un brano per artista. Serve per provare matching e chat:
 
 ```bash
-$ dotnet ef database update
+DEMO_PASSWORD='<almeno-8-caratteri>' ./scripts/seed-demo.sh
 ```
 
-5. Avvia il progetto (assicurati che usi HTTP)
+Gli account sono `giulia.demo`, `marco.demo`, `sara.demo` e `luca.demo`, tutti con dominio `@demo.soundbond.test` e la password scelta.
 
-<hr/>
+### Configurazione
 
-### 🔮 Funzionalità future
-
-Modalità ascolto condiviso
-
-Integrazione Spotify
-
-<hr/>
-
-### 👤 Autore
-
-Sviluppato da Camilla Zicari
-🔗 GitHub — camillazicari
-
-<hr />
-
-### 🔗 Link Utili
-
-Frontend: https://github.com/camillazicari/SoundBond-Frontend.git
+| Chiave | Dove impostarla | Note |
+| --- | --- | --- |
+| `ConnectionStrings:DefaultConnection` | user-secrets / variabile `ConnectionStrings__DefaultConnection` | obbligatoria |
+| `Jwt:SecurityKey` | user-secrets / variabile `Jwt__SecurityKey` | obbligatoria, almeno 32 byte |
+| `Cors:AllowedOrigins` | `appsettings.json` / variabili `Cors__AllowedOrigins__0`, `__1`, ... | default `http://localhost:5173` |
+| `Jwt:Issuer`, `Jwt:Audience`, `Jwt:ExpiresInMinutes` | `appsettings.json` | |
+| `Identity:*` | `appsettings.json` | regole sulle password |

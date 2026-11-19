@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Crea alcuni utenti dimostrativi con gusti musicali parzialmente sovrapposti,
-# utili per provare matching e chat in locale.
-# Uso: DEMO_PASSWORD=... ./scripts/seed-demo.sh [http://localhost:5220]
+# crea qualche utente di prova per testare match e chat
+# uso: DEMO_PASSWORD=... ./scripts/seed-demo.sh [http://localhost:5220]
 set -euo pipefail
 API="${1:-http://localhost:5220}"
 : "${DEMO_PASSWORD:?Imposta DEMO_PASSWORD (almeno 8 caratteri)}"
@@ -24,7 +23,7 @@ seed_user() {
     id=$(python3 -c 'import json,sys;d=json.loads(sys.argv[1])["data"];print(d[0]["id"] if d else "")' "$info")
     img=$(python3 -c 'import json,sys;d=json.loads(sys.argv[1])["data"];print(d[0]["picture_medium"] if d else "")' "$info")
     post /api/Artisti "{\"nome\":$(json "$a"),\"img\":$(json "$img")}" "$token" >/dev/null || true
-    # primo brano piu' ascoltato dell'artista
+    # brano più ascoltato dell'artista
     [ -n "$id" ] && curl -sf "https://api.deezer.com/artist/$id/top?limit=1" | python3 -c '
 import json,sys
 d=json.load(sys.stdin).get("data") or []

@@ -15,8 +15,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// I valori sensibili non sono nel repository: si impostano con dotnet user-secrets
-// in sviluppo o con variabili d'ambiente in produzione (vedi README).
+// password e chiavi stanno negli user-secrets o nelle variabili d'ambiente
 if (string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("DefaultConnection")))
     throw new InvalidOperationException("ConnectionStrings:DefaultConnection non configurata.");
 if (string.IsNullOrWhiteSpace(builder.Configuration["Jwt:SecurityKey"]))

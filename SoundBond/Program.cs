@@ -15,12 +15,22 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// I valori sensibili non sono nel repository: si impostano con dotnet user-secrets
+// in sviluppo o con variabili d'ambiente in produzione (vedi README).
+if (string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("DefaultConnection")))
+    throw new InvalidOperationException("ConnectionStrings:DefaultConnection non configurata.");
+if (string.IsNullOrWhiteSpace(builder.Configuration["Jwt:SecurityKey"]))
+    throw new InvalidOperationException("Jwt:SecurityKey non configurata.");
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? new[] { "http://localhost:5173" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
